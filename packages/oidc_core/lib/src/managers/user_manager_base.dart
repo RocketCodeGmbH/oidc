@@ -1093,7 +1093,7 @@ abstract class OidcUserManagerBase {
 
   /// Loads and verifies the tokens.
   @protected
-  Future<void> loadCachedTokens() async {
+  Future<void> loadCachedTokens({bool skipSupportedCheck = false}) async {
     final usedKeys = <String>{
       OidcConstants_Store.currentToken,
       OidcConstants_Store.currentUserAttributes,
@@ -1142,8 +1142,9 @@ abstract class OidcUserManagerBase {
         if (token.refreshToken != null &&
             (idTokenNeedsRefresh || token.isAccessTokenExpired())) {
           try {
-            loadedUser =
-                await refreshToken(overrideRefreshToken: token.refreshToken);
+            loadedUser = await refreshToken(
+                overrideRefreshToken: token.refreshToken,
+                skipSupportedCheck: skipSupportedCheck);
           } catch (e) {
             // An app might go offline during token refresh, so we consult the
             // supportOfflineAuth setting to check whether this is an issue or
@@ -1267,7 +1268,7 @@ abstract class OidcUserManagerBase {
 
   /// Initializes the user manager, this also gets the [discoveryDocument] if it
   /// wasn't provided.
-  Future<void> init() async {
+  Future<void> init({bool skipSupportedCheck = false}) async {
     if (hasInit) {
       return;
     }
@@ -1284,7 +1285,7 @@ abstract class OidcUserManagerBase {
         //no logout requests.
         if (!await loadStateResult()) {
           //no state results.
-          await loadCachedTokens();
+          await loadCachedTokens(skipSupportedCheck: skipSupportedCheck);
         }
       }
       final frontChannelLogoutUri = settings.frontChannelLogoutUri;
