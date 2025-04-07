@@ -183,6 +183,7 @@ abstract class OidcUserManagerBase {
     Map<String, dynamic>? extraTokenParameters,
     Map<String, String>? extraTokenHeaders,
     OidcPlatformSpecificOptions? options,
+    bool? validateAndSave = true,
   }) async {
     ensureInit();
     final discoveryDocument =
@@ -233,6 +234,7 @@ abstract class OidcUserManagerBase {
       options: options,
       metadata: discoveryDocument,
       prep: prep,
+      validateAndSave: validateAndSave,
     );
   }
 
@@ -300,13 +302,13 @@ abstract class OidcUserManagerBase {
   }
 
   @protected
-  Future<OidcUser?> tryGetAuthResponse({
-    required OidcAuthorizeRequest request,
-    required String grantType,
-    required OidcPlatformSpecificOptions options,
-    required OidcProviderMetadata metadata,
-    required Map<String, dynamic> prep,
-  }) async {
+  Future<OidcUser?> tryGetAuthResponse(
+      {required OidcAuthorizeRequest request,
+      required String grantType,
+      required OidcPlatformSpecificOptions options,
+      required OidcProviderMetadata metadata,
+      required Map<String, dynamic> prep,
+      bool? validateAndSave}) async {
     try {
       final response =
           await getAuthorizationResponse(metadata, request, options, prep);
@@ -323,6 +325,7 @@ abstract class OidcUserManagerBase {
           response: response,
           grantType: grantType,
           metadata: metadata,
+          validateAndSave: validateAndSave,
           scopes: [
             ...request.scope
                 .where((e) => request.extraScopeToConsent?.contains(e) != true)
@@ -532,6 +535,7 @@ abstract class OidcUserManagerBase {
     required String grantType,
     required OidcProviderMetadata metadata,
     required List<String> scopes,
+    bool? validateAndSave,
   }) async {
     final receivedStateKey = response.state;
     if (receivedStateKey == null) {
@@ -567,12 +571,12 @@ abstract class OidcUserManagerBase {
             sessionState: response.sessionState,
           );
           return await createUserFromToken(
-            token: token,
-            userInfo: null,
-            attributes: null,
-            nonce: stateData.nonce,
-            metadata: metadata,
-          );
+              token: token,
+              userInfo: null,
+              attributes: null,
+              nonce: stateData.nonce,
+              metadata: metadata,
+              validateAndSave: validateAndSave ?? true);
         }
       }
 
